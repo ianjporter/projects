@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project & Desk Tracker</title>
+  <!-- Tailwind CSS CDN for modern responsive layout -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons for minimalist visual cues -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Clean custom focus ring & smooth collapse transitions */
+    textarea {
+      resize: vertical;
+    }
+    .notes-content a {
+      color: #2563eb;
+      text-decoration: underline;
+      word-break: break-all;
+    }
+    .notes-content a:hover {
+      color: #1d4ed8;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen font-sans antialiased selection:bg-emerald-100 selection:text-emerald-900">
+
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-xs">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-xl shadow-sm">
+          <i class="ph ph-kanban"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-semibold tracking-tight text-slate-900">Project & Life Tracker</h1>
+          <p class="text-xs text-slate-500">Dedicated workspace for work commitments and personal projects</p>
+        </div>
+      </div>
+      <div class="flex items-center flex-wrap gap-2">
+        <button id="notifyBtn" onclick="requestNotificationAccess()" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors" title="Enable browser reminders">
+          <i class="ph ph-bell" id="notifyIcon"></i>
+          <span id="notifyStatus">Enable Reminders</span>
+        </button>
+        <button onclick="exportAllCalendarICS()" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors" title="Export due dates to Apple/Google/Outlook Calendar">
+          <i class="ph ph-calendar-plus"></i>
+          <span>Sync All to .ics</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+
+    <!-- Project Creation Form -->
+    <section class="bg-white rounded-2xl border border-slate-200/80 p-5 mb-8 shadow-sm">
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+        <i class="ph-bold ph-plus-circle text-emerald-600"></i> New Project or Task
+      </h2>
+      <form id="projectForm" onsubmit="handleCreateProject(event)" class="space-y-3">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+          <div class="md:col-span-5">
+            <input 
+              type="text" 
+              id="newTitle" 
+              placeholder="Project title (e.g. Catalog Audit, Home Garden Setup)..." 
+              required
+              class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+            >
+          </div>
+          <!-- Category Selector -->
+          <div class="md:col-span-2">
+            <select 
+              id="newCategory" 
+              class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition font-medium"
+            >
+              <option value="Work" selected>💼 Work</option>
+              <option value="Personal">🏡 Personal</option>
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <select 
+              id="newStage" 
+              class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+            >
+              <option value="Planning">🌱 Planning</option>
+              <option value="Active" selected>⚡ Active</option>
+              <option value="Review">🔍 In Review</option>
+              <option value="Done">✅ Done</option>
+            </select>
+          </div>
+          <div class="md:col-span-3">
+            <input 
+              type="date" 
+              id="newDueDate" 
+              class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition text-slate-700"
+            >
+          </div>
+        </div>
+
+        <div>
+          <textarea 
+            id="newNotes" 
+            rows="2" 
+            placeholder="Notes, next action step, or link to Google Doc / Sheet / folder (URLs become clickable links)..."
+            class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+          ></textarea>
+        </div>
+
+        <div class="flex justify-end pt-1">
+          <button 
+            type="submit" 
+            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm inline-flex items-center gap-2"
+          >
+            <i class="ph-bold ph-plus"></i> Add Project
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Global Controls: Status Filter and Search -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <!-- Filter tabs -->
+      <div class="flex items-center gap-1.5 p-1 bg-slate-200/70 rounded-xl overflow-x-auto text-xs font-medium">
+        <button onclick="setFilter('All')" id="filter-All" class="filter-tab px-3 py-1.5 rounded-lg transition-all bg-white text-slate-900 shadow-xs">
+          All Stages (<span id="count-All">0</span>)
+        </button>
+        <button onclick="setFilter('Active')" id="filter-Active" class="filter-tab px-3 py-1.5 rounded-lg transition-all text-slate-600 hover:text-slate-900">
+          Active (<span id="count-Active">0</span>)
+        </button>
+        <button onclick="setFilter('Planning')" id="filter-Planning" class="filter-tab px-3 py-1.5 rounded-lg transition-all text-slate-600 hover:text-slate-900">
+          Planning (<span id="count-Planning">0</span>)
+        </button>
+        <button onclick="setFilter('Review')" id="filter-Review" class="filter-tab px-3 py-1.5 rounded-lg transition-all text-slate-600 hover:text-slate-900">
+          Review (<span id="count-Review">0</span>)
+        </button>
+        <button onclick="setFilter('Done')" id="filter-Done" class="filter-tab px-3 py-1.5 rounded-lg transition-all text-slate-600 hover:text-slate-900">
+          Done (<span id="count-Done">0</span>)
+        </button>
+      </div>
+
+      <!-- Quick Search input -->
+      <div class="relative w-full sm:w-72">
+        <i class="ph ph-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
+        <input 
+          type="text" 
+          id="searchInput" 
+          oninput="handleSearch(this.value)" 
+          placeholder="Search projects or notes..." 
+          class="w-full pl-9 pr-3 py-1.5 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-700"
+        >
+      </div>
+    </div>
+
+    <!-- Dual Section Layout -->
+    <div class="space-y-10">
+
+      <!-- SECTION 1: WORK PROJECTS -->
+      <section>
+        <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
+              <i class="ph-bold ph-briefcase"></i>
+            </span>
+            <div>
+              <h2 class="text-base font-bold text-slate-900 tracking-tight">Work Projects</h2>
+              <p class="text-xs text-slate-500">School, library, and teaching initiatives</p>
+            </div>
+          </div>
+          <span id="badge-work-count" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700">
+            0 active
+          </span>
+        </div>
+
+        <div id="workContainer" class="space-y-3">
+          <!-- Work projects render here -->
+        </div>
+        <div id="emptyWorkState" class="hidden text-center py-8 px-4 bg-white/50 rounded-xl border border-dashed border-slate-200 text-xs text-slate-400">
+          No work projects matching current filters.
+        </div>
+      </section>
+
+      <!-- SECTION 2: PERSONAL PROJECTS -->
+      <section>
+        <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
+              <i class="ph-bold ph-house-line"></i>
+            </span>
+            <div>
+              <h2 class="text-base font-bold text-slate-900 tracking-tight">Personal Projects</h2>
+              <p class="text-xs text-slate-500">Personal errands, hobbies, and reading goals</p>
+            </div>
+          </div>
+          <span id="badge-personal-count" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800">
+            0 active
+          </span>
+        </div>
+
+        <div id="personalContainer" class="space-y-3">
+          <!-- Personal projects render here -->
+        </div>
+        <div id="emptyPersonalState" class="hidden text-center py-8 px-4 bg-white/50 rounded-xl border border-dashed border-slate-200 text-xs text-slate-400">
+          No personal projects matching current filters.
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <script>
+    // State
+    const STORAGE_KEY = 'desk_projects_v3';
+    let projects = [];
+    let currentFilter = 'All';
+    let searchQuery = '';
+
+    // Stage configuration & styling
+    const STAGE_CONFIG = {
+      'Planning': { label: 'Planning', color: 'bg-sky-50 text-sky-700 border-sky-200', icon: 'ph-plant' },
+      'Active': { label: 'Active', color: 'bg-amber-50 text-amber-700 border-amber-200', icon: 'ph-lightning' },
+      'Review': { label: 'Review', color: 'bg-purple-50 text-purple-700 border-purple-200', icon: 'ph-eye' },
+      'Done': { label: 'Done', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: 'ph-check-circle' }
+    };
+
+    // Load initial data
+    function loadProjects() {
+      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('desk_projects_v2');
+      if (saved) {
+        try {
+          const raw = JSON.parse(saved);
+          // Backwards compatibility migration: ensure category exists
+          projects = raw.map(p => ({
+            ...p,
+            category: p.category || 'Work'
+          }));
+        } catch (e) {
+          projects = [];
+        }
+      } else {
+        // Initial friendly starter examples
+        projects = [
+          {
+            id: 'work-demo-1',
+            category: 'Work',
+            title: 'Freshman Research Orientation LibGuide',
+            stage: 'Active',
+            dueDate: getRelativeDateString(3),
+            notes: 'Draft in Docs: https://docs.google.com/document/d/example\nVerify database credentials before Friday workshop.',
+            isNotesExpanded: true,
+            createdAt: new Date().toISOString()
+          },
+          {
+            id: 'work-demo-2',
+            category: 'Work',
+            title: 'Fall Semester Book Requisitions',
+            stage: 'Planning',
+            dueDate: getRelativeDateString(10),
+            notes: 'Check departmental faculty wishlist spreadsheet before submitting PO.',
+            isNotesExpanded: false,
+            createdAt: new Date().toISOString()
+          },
+          {
+            id: 'pers-demo-1',
+            category: 'Personal',
+            title: 'Winter Break Reading Challenge List',
+            stage: 'Active',
+            dueDate: getRelativeDateString(7),
+            notes: 'Pick 5 historical fiction titles and 2 audiobooks for travel.',
+            isNotesExpanded: true,
+            createdAt: new Date().toISOString()
+          }
+        ];
+        saveProjects();
+      }
+      render();
+      checkBrowserNotifications();
+      updateNotificationUI();
+    }
+
+    function saveProjects() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+      updateCounts();
+    }
+
+    function getRelativeDateString(daysAhead) {
+      const d = new Date();
+      d.setDate(d.getDate() + daysAhead);
+      return d.toISOString().split('T')[0];
+    }
+
+    function handleCreateProject(e) {
+      e.preventDefault();
+      const titleInput = document.getElementById('newTitle');
+      const categoryInput = document.getElementById('newCategory');
+      const stageInput = document.getElementById('newStage');
+      const dateInput = document.getElementById('newDueDate');
+      const notesInput = document.getElementById('newNotes');
+
+      const title = titleInput.value.trim();
+      if (!title) return;
+
+      const newProject = {
+        id: 'proj_' + Date.now(),
+        category: categoryInput.value,
+        title: title,
+        stage: stageInput.value,
+        dueDate: dateInput.value || '',
+        notes: notesInput.value.trim(),
+        isNotesExpanded: notesInput.value.trim().length > 0,
+        createdAt: new Date().toISOString()
+      };
+
+      projects.unshift(newProject);
+      saveProjects();
+      render();
+
+      // Reset form
+      titleInput.value = '';
+      notesInput.value = '';
+      dateInput.value = '';
+      stageInput.value = 'Active';
+      titleInput.focus();
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-tab').forEach(btn => {
+        btn.classList.remove('bg-white', 'text-slate-900', 'shadow-xs');
+        btn.classList.add('text-slate-600');
+      });
+      const activeBtn = document.getElementById(`filter-${filter}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-white', 'text-slate-900', 'shadow-xs');
+        activeBtn.classList.remove('text-slate-600');
+      }
+      render();
+    }
+
+    function handleSearch(query) {
+      searchQuery = query.toLowerCase();
+      render();
+    }
+
+    function updateStage(id, newStage) {
+      const proj = projects.find(p => p.id === id);
+      if (proj) {
+        proj.stage = newStage;
+        saveProjects();
+        render();
+      }
+    }
+
+    function updateCategory(id, newCategory) {
+      const proj = projects.find(p => p.id === id);
+      if (proj) {
+        proj.category = newCategory;
+        saveProjects();
+        render();
+      }
+    }
+
+    function toggleNotes(id) {
+      const proj = projects.find(p => p.id === id);
+      if (proj) {
+        proj.isNotesExpanded = !proj.isNotesExpanded;
+        saveProjects();
+        render();
+      }
+    }
+
+    function updateNotesContent(id, newText) {
+      const proj = projects.find(p => p.id === id);
+      if (proj) {
+        proj.notes = newText;
+        saveProjects();
+      }
+    }
+
+    function deleteProject(id) {
+      projects = projects.filter(p => p.id !== id);
+      saveProjects();
+      render();
+    }
+
+    function updateCounts() {
+      const counts = { All: projects.length, Planning: 0, Active: 0, Review: 0, Done: 0 };
+      let workActive = 0;
+      let personalActive = 0;
+
+      projects.forEach(p => {
+        if (counts[p.stage] !== undefined) counts[p.stage]++;
+        if (p.stage !== 'Done') {
+          if (p.category === 'Work') workActive++;
+          else personalActive++;
+        }
+      });
+
+      document.getElementById('count-All').innerText = counts.All;
+      document.getElementById('count-Planning').innerText = counts.Planning;
+      document.getElementById('count-Active').innerText = counts.Active;
+      document.getElementById('count-Review').innerText = counts.Review;
+      document.getElementById('count-Done').innerText = counts.Done;
+
+      document.getElementById('badge-work-count').innerText = `${workActive} active`;
+      document.getElementById('badge-personal-count').innerText = `${personalActive} active`;
+    }
+
+    // Convert raw URLs into safe clickable links
+    function linkify(text) {
+      if (!text) return '';
+      const escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+      return escaped.replace(urlRegex, function(url) {
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 font-medium hover:underline text-blue-600">${url} <i class="ph-bold ph-arrow-square-out text-[11px]"></i></a>`;
+      });
+    }
+
+    // Date badge helper
+    function getDueBadge(dueDateString, isDone) {
+      if (!dueDateString) return '';
+      const today = new Date().toISOString().split('T')[0];
+      const isPast = dueDateString < today && !isDone;
+      const isToday = dueDateString === today && !isDone;
+
+      let badgeClasses = "bg-slate-100 text-slate-600 border-slate-200";
+      let icon = "ph-calendar-blank";
+      let label = dueDateString;
+
+      if (isPast) {
+        badgeClasses = "bg-rose-50 text-rose-700 border-rose-200 font-semibold";
+        icon = "ph-warning-circle";
+        label = `Overdue: ${dueDateString}`;
+      } else if (isToday) {
+        badgeClasses = "bg-amber-50 text-amber-700 border-amber-200 font-semibold animate-pulse";
+        icon = "ph-bell-ringing";
+        label = `Due Today!`;
+      }
+
+      return `
+        <span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md border ${badgeClasses}">
+          <i class="ph ${icon}"></i> ${label}
+        </span>
+      `;
+    }
+
+    // Render single project card HTML
+    function createProjectCardHTML(p) {
+      const stageConfig = STAGE_CONFIG[p.stage] || STAGE_CONFIG['Active'];
+      const isDone = p.stage === 'Done';
+      const hasNotes = Boolean(p.notes && p.notes.trim().length > 0);
+
+      return `
+        <div class="bg-white rounded-xl border ${isDone ? 'border-slate-200 bg-slate-50/50' : 'border-slate-200'} p-4 transition-all duration-150 shadow-xs hover:border-slate-300">
+          <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${stageConfig.color}">
+                  <i class="ph ${stageConfig.icon}"></i> ${stageConfig.label}
+                </span>
+                ${getDueBadge(p.dueDate, isDone)}
+              </div>
+              <h3 class="text-base font-semibold text-slate-900 mt-1.5 ${isDone ? 'line-through text-slate-400' : ''}">
+                ${p.title}
+              </h3>
+            </div>
+
+            <!-- Stage & Category Selectors and Action Buttons -->
+            <div class="flex items-center gap-1.5 self-end sm:self-auto shrink-0 flex-wrap">
+              <!-- Switch Category on the fly -->
+              <select 
+                onchange="updateCategory('${p.id}', this.value)" 
+                class="text-xs bg-slate-100 hover:bg-slate-200 border-none font-medium text-slate-700 py-1.5 px-2 rounded-lg focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                title="Change section"
+              >
+                <option value="Work" ${p.category === 'Work' ? 'selected' : ''}>💼 Work</option>
+                <option value="Personal" ${p.category === 'Personal' ? 'selected' : ''}>🏡 Personal</option>
+              </select>
+
+              <!-- Stage selector -->
+              <select 
+                onchange="updateStage('${p.id}', this.value)" 
+                class="text-xs bg-slate-100 hover:bg-slate-200 border-none font-medium text-slate-700 py-1.5 px-2.5 rounded-lg focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              >
+                <option value="Planning" ${p.stage === 'Planning' ? 'selected' : ''}>🌱 Planning</option>
+                <option value="Active" ${p.stage === 'Active' ? 'selected' : ''}>⚡ Active</option>
+                <option value="Review" ${p.stage === 'Review' ? 'selected' : ''}>🔍 Review</option>
+                <option value="Done" ${p.stage === 'Done' ? 'selected' : ''}>✅ Done</option>
+              </select>
+
+              <!-- Single .ics Calendar Download -->
+              ${p.dueDate ? `
+                <button 
+                  onclick="downloadSingleICS('${p.id}')" 
+                  title="Add reminder to your Calendar" 
+                  class="p-1.5 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors text-base"
+                >
+                  <i class="ph ph-calendar-plus"></i>
+                </button>
+              ` : ''}
+
+              <!-- Notes Toggle Button -->
+              <button 
+                onclick="toggleNotes('${p.id}')" 
+                title="${p.isNotesExpanded ? 'Collapse notes' : 'Expand notes'}"
+                class="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors text-base flex items-center gap-1"
+              >
+                <i class="ph ph-note-pencil"></i>
+                ${hasNotes && !p.isNotesExpanded ? `<span class="w-2 h-2 rounded-full bg-emerald-500"></span>` : ''}
+              </button>
+
+              <!-- Delete Button -->
+              <button 
+                onclick="deleteProject('${p.id}')" 
+                title="Delete project" 
+                class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors text-base"
+              >
+                <i class="ph ph-trash"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Expandable Notes & Link Section -->
+          <div class="${p.isNotesExpanded ? 'block' : 'hidden'} mt-3 pt-3 border-t border-slate-100">
+            <label class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1 block">
+              Notes & Resource Links:
+            </label>
+            <textarea 
+              rows="2" 
+              placeholder="Paste links to docs, spreadsheets, or type notes..." 
+              oninput="updateNotesContent('${p.id}', this.value)"
+              class="w-full text-xs font-mono text-slate-700 p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:ring-1 focus:ring-emerald-500"
+            >${p.notes || ''}</textarea>
+
+            ${p.notes ? `
+              <div class="mt-2 text-xs bg-slate-50/80 p-2.5 rounded-lg border border-slate-100 notes-content whitespace-pre-wrap leading-relaxed text-slate-600">
+                ${linkify(p.notes)}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function render() {
+      const workContainer = document.getElementById('workContainer');
+      const personalContainer = document.getElementById('personalContainer');
+      const emptyWorkState = document.getElementById('emptyWorkState');
+      const emptyPersonalState = document.getElementById('emptyPersonalState');
+      
+      const filtered = projects.filter(p => {
+        const matchesFilter = currentFilter === 'All' || p.stage === currentFilter;
+        const matchesQuery = p.title.toLowerCase().includes(searchQuery) || (p.notes && p.notes.toLowerCase().includes(searchQuery));
+        return matchesFilter && matchesQuery;
+      });
+
+      updateCounts();
+
+      // Separate by category
+      const workProjects = filtered.filter(p => p.category === 'Work');
+      const personalProjects = filtered.filter(p => p.category === 'Personal');
+
+      // Render Work column
+      if (workProjects.length === 0) {
+        workContainer.innerHTML = '';
+        emptyWorkState.classList.remove('hidden');
+      } else {
+        emptyWorkState.classList.add('hidden');
+        workContainer.innerHTML = workProjects.map(createProjectCardHTML).join('');
+      }
+
+      // Render Personal column
+      if (personalProjects.length === 0) {
+        personalContainer.innerHTML = '';
+        emptyPersonalState.classList.remove('hidden');
+      } else {
+        emptyPersonalState.classList.add('hidden');
+        personalContainer.innerHTML = personalProjects.map(createProjectCardHTML).join('');
+      }
+    }
+
+    function requestNotificationAccess() {
+      if (!("Notification" in window)) {
+        alertFallback("This browser does not support desktop notifications.");
+        return;
+      }
+      Notification.requestPermission().then(permission => {
+        updateNotificationUI();
+        if (permission === "granted") {
+          checkBrowserNotifications();
+        }
+      });
+    }
+
+    function updateNotificationUI() {
+      const statusText = document.getElementById('notifyStatus');
+      const icon = document.getElementById('notifyIcon');
+      if (!("Notification" in window)) {
+        statusText.innerText = "No Notif Support";
+        return;
+      }
+      if (Notification.permission === "granted") {
+        statusText.innerText = "Reminders Active";
+        icon.className = "ph-fill ph-bell-simple-ringing text-emerald-600";
+      } else if (Notification.permission === "denied") {
+        statusText.innerText = "Blocked in Browser";
+        icon.className = "ph ph-bell-slash text-rose-500";
+      } else {
+        statusText.innerText = "Enable Reminders";
+        icon.className = "ph ph-bell text-slate-600";
+      }
+    }
+
+    function checkBrowserNotifications() {
+      if (!("Notification" in window) || Notification.permission !== "granted") return;
+      const today = new Date().toISOString().split('T')[0];
+      const notifiedKey = `notified_${today}`;
+      const alreadyNotified = sessionStorage.getItem(notifiedKey);
+
+      if (alreadyNotified) return;
+
+      const dueToday = projects.filter(p => p.dueDate === today && p.stage !== 'Done');
+      if (dueToday.length > 0) {
+        new Notification("Tasks Due Today", {
+          body: `You have ${dueToday.length} task(s) due today: "${dueToday[0].title}"`,
+          icon: "https://placehold.co/128x128/16a34a/ffffff?text=Desk"
+        });
+        sessionStorage.setItem(notifiedKey, 'true');
+      }
+    }
+
+    function formatICSDate(dateStr) {
+      return dateStr.replace(/-/g, '');
+    }
+
+    function generateICSContent(eventList) {
+      let ics = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Desk Tracker//Solo Project Manager//EN',
+        'CALSCALE:GREGORIAN'
+      ];
+
+      eventList.forEach(item => {
+        const cleanDate = formatICSDate(item.dueDate);
+        const description = (item.notes || '').replace(/\n/g, '\\n');
+        ics.push('BEGIN:VEVENT');
+        ics.push(`UID:project-${item.id}@desktracker`);
+        ics.push(`DTSTAMP:${formatICSDate(new Date().toISOString().split('T')[0])}T090000Z`);
+        ics.push(`DTSTART;VALUE=DATE:${cleanDate}`);
+        ics.push(`SUMMARY:[${item.category}] [${item.stage}] ${item.title}`);
+        ics.push(`DESCRIPTION:${description}`);
+        ics.push('BEGIN:VALARM');
+        ics.push('TRIGGER:-PT15H');
+        ics.push('ACTION:DISPLAY');
+        ics.push(`DESCRIPTION:Reminder: ${item.title} (${item.category}) is due today!`);
+        ics.push('END:VALARM');
+        ics.push('END:VEVENT');
+      });
+
+      ics.push('END:VCALENDAR');
+      return ics.join('\r\n');
+    }
+
+    function triggerFileDownload(filename, content) {
+      const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function downloadSingleICS(id) {
+      const proj = projects.find(p => p.id === id);
+      if (!proj || !proj.dueDate) return;
+      const icsData = generateICSContent([proj]);
+      const filename = `${proj.category.toLowerCase()}_${proj.title.toLowerCase().replace(/[^a-z0-9]/g, '_')}.ics`;
+      triggerFileDownload(filename, icsData);
+    }
+
+    function exportAllCalendarICS() {
+      const projectsWithDates = projects.filter(p => p.dueDate && p.stage !== 'Done');
+      if (projectsWithDates.length === 0) {
+        showFloatingToast("No active projects have due dates set.");
+        return;
+      }
+      const icsData = generateICSContent(projectsWithDates);
+      triggerFileDownload('all_projects_reminders.ics', icsData);
+    }
+
+    function showFloatingToast(message) {
+      const toast = document.createElement('div');
+      toast.className = "fixed bottom-5 right-5 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-lg shadow-lg z-50 transition-opacity duration-300";
+      toast.innerText = message;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function alertFallback(message) {
+      showFloatingToast(message);
+    }
+
+    window.addEventListener('DOMContentLoaded', loadProjects);
+  </script>
+</body>
+</html>
